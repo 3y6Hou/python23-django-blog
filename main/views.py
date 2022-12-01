@@ -1,12 +1,13 @@
-# from django.contrib.auth import get_user_model
+from django.contrib.auth import get_user_model
 from django.shortcuts import get_object_or_404
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
 from .models import Post
 from .serializers import PostSerializer
+from reviews.models import LikePost
 
-# User = get_user_model()
+User = get_user_model()
 
 @api_view(['GET'])
 def post_list(request):
@@ -51,3 +52,15 @@ def search(request):
     queryset = Post.objects.filter(body__icontains=q)
     serializer = PostSerializer(queryset, many=True)
     return Response(serializer.data, status=200)
+
+@api_view(['POST'])
+def toggle_like(request):
+    post_id = request.data.get('post')
+    author_id = request.data.get('author')
+    post = get_object_or_404(Post, id=post_id)
+    author = get_object_or_404(User, id=author_id)
+    if LikePost.objects.filter(post=post, author=author).exists():
+       LikePost.objects.filter(post=post, author=author).delete()
+    else:
+       LikePost.objects.create(post=post, author=author) 
+    return Response(status=201)
